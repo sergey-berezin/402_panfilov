@@ -8,6 +8,7 @@ using static Microsoft.ML.Transforms.Image.ImageResizingEstimator;
 using System.Drawing;
 using System.Threading.Tasks.Dataflow;
 using System.Threading;
+using System.Windows.Media.Imaging;
 
 namespace YOLO
 {
@@ -50,11 +51,9 @@ namespace YOLO
             var processingImageActionBlock = new ActionBlock<string>(
                 async filename =>
                 {
-                    //Console.WriteLine("ActionBlock Start");
                     if (token.IsCancellationRequested) return;
                     await Task.Run(() =>
                     {
-                        //Console.WriteLine("Processing...");
                         using (var bitmap = new Bitmap(Image.FromFile(filename)))
                         {
                             if (token.IsCancellationRequested) return;
@@ -63,10 +62,21 @@ namespace YOLO
                             if (token.IsCancellationRequested) return;
                             var results = predict.GetResults(classesNames, 0.3f, 0.7f);
 
+                            var uri = new Uri(filename, UriKind.RelativeOrAbsolute);
+                            var fileImage = new BitmapImage(uri);
+                            fileImage.Freeze();
+
+                            foreach (var item in results)
+                            {
+                                item.SetImage(filename, fileImage);
+                            }
+                            fileImage = null;
+
                             output.Post(results);
                         }
+
+
                     });
-                    //Console.WriteLine("ActionBlock End");
                 },
                 new ExecutionDataflowBlockOptions
                 {
