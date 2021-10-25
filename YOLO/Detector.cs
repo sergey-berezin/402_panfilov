@@ -8,7 +8,6 @@ using static Microsoft.ML.Transforms.Image.ImageResizingEstimator;
 using System.Drawing;
 using System.Threading.Tasks.Dataflow;
 using System.Threading;
-using System.Windows.Media.Imaging;
 
 namespace YOLO
 {
@@ -62,15 +61,10 @@ namespace YOLO
                             if (token.IsCancellationRequested) return;
                             var results = predict.GetResults(classesNames, 0.3f, 0.7f);
 
-                            var uri = new Uri(filename, UriKind.RelativeOrAbsolute);
-                            var fileImage = new BitmapImage(uri);
-                            fileImage.Freeze();
-
                             foreach (var item in results)
                             {
-                                item.SetImage(filename, fileImage);
+                                item.SetFilename(filename);
                             }
-                            fileImage = null;
 
                             output.Post(results);
                         }

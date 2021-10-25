@@ -84,7 +84,7 @@ namespace RecognizerVM
 
             classDict.Clear();
             uiContext = SynchronizationContext.Current;
-            Task.Run(async () => await DetectObjectsAsync());
+            _ = DetectObjectsAsync();
         }
 
 
@@ -112,7 +112,7 @@ namespace RecognizerVM
 
                 foreach (var item in data)
                 {
-                    uiContext.Send(x => dict.Add(item), null);
+                    uiContext.Send(x => dict.Add(new YoloImageResult(item)), null);
                 }
 
                 Progress = (float)i / imageAmount;
