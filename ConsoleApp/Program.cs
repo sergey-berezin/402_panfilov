@@ -9,7 +9,7 @@ namespace ConsoleApp
 {
     class Program
     {
-        const string inputPath = @"..\..\..\Assets\InputImages";
+        const string inputPath = @"..\..\..\..\Assets\InputImages";
 
         static async Task Main()
         {

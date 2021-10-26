@@ -50,11 +50,9 @@ namespace YOLO
             var processingImageActionBlock = new ActionBlock<string>(
                 async filename =>
                 {
-                    //Console.WriteLine("ActionBlock Start");
                     if (token.IsCancellationRequested) return;
                     await Task.Run(() =>
                     {
-                        //Console.WriteLine("Processing...");
                         using (var bitmap = new Bitmap(Image.FromFile(filename)))
                         {
                             if (token.IsCancellationRequested) return;
@@ -63,10 +61,16 @@ namespace YOLO
                             if (token.IsCancellationRequested) return;
                             var results = predict.GetResults(classesNames, 0.3f, 0.7f);
 
+                            foreach (var item in results)
+                            {
+                                item.SetFilename(filename);
+                            }
+
                             output.Post(results);
                         }
+
+
                     });
-                    //Console.WriteLine("ActionBlock End");
                 },
                 new ExecutionDataflowBlockOptions
                 {
