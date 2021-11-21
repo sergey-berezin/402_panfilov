@@ -20,6 +20,7 @@
             <Button Name="button_ChooseDirectory"  Margin="10,10,10,0" Content="Choose input directory" Click="OnClickChooseDirectory"/>
             <Button Name="button_Execute"  Margin="10,10,10,0" Content="Detect objects" Click="OnClickExecute"/>
             <Button Name="button_Stop"  Margin="10,10,10,0" Content="Stop" Click="OnClickStop"/>
+            <Button Name="button_Clear"  Margin="10,10,10,0" Content="Clear" Click="OnClickClear"/>
         </StackPanel>
 
         <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
@@ -31,11 +32,11 @@
 
         <Rectangle Grid.Column="1" Fill="Black" />
 
-        <ListBox Name="listBox_Classes" Grid.Column="2" Margin="10" ItemsSource="{Binding Path=Classes}"/>
+        <ListBox Name="listBox_Classes" Grid.Column="2" Margin="10" SelectionChanged="OnSelectionChanged" ItemsSource="{Binding Path=ClassListView}"/>
 
         <Rectangle Grid.Column="3" Fill="Black" />
 
-        <ListView Name="wrapPanel_Objects" Grid.Column="4"  Margin="10" ItemsSource="{Binding ElementName=listBox_Classes, Path=SelectedItem}">
+        <ListView Name="wrapPanel_Objects" Grid.Column="4"  Margin="10" ItemsSource="{Binding Path=ImageListView}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <UniformGrid Columns="5"/>
@@ -43,7 +44,7 @@
             </ItemsControl.ItemsPanel>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Image Height="200" Width="200" Source="{Binding Path=Image}"/>
+                    <Image Height="200" Width="200" Source="{Binding}"/>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
