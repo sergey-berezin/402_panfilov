@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using YOLO;
+using DataBase;
 
 namespace RecognizerVM
 {
@@ -18,13 +20,16 @@ namespace RecognizerVM
         string inputPath = "";
         bool processing;
         float progress;
-        SynchronizationContext uiContext;
         CancellationTokenSource tokenSource = new();
-        YoloDictionary classDict = new();
+        DataBaseManager dbManager = new();
         BufferBlock<IReadOnlyList<YoloResult>> output = new();
         IUIServices svc;
+        ClassListView classListView;
+        ImageListView imageListView;
 
-        public YoloDictionary Classes => classDict;
+        public ClassListView ClassListView => classListView;
+        public ImageListView ImageListView => imageListView;
+        public DataBaseManager DBManager => dbManager;
         public string ProgressPercentsAmount => $"{(Progress * 100f):F1}%";
         public string InputPath
         {
@@ -50,6 +55,8 @@ namespace RecognizerVM
         public MainViewModel(IUIServices _svc)
         {
             svc = _svc;
+            classListView = new(this);
+            imageListView = new(this);
         }
 
 
@@ -68,6 +75,19 @@ namespace RecognizerVM
             tokenSource.Cancel();
         }
 
+        public void ClearHandler()
+        {
+            dbManager.Clear();
+        }
+
+        public void SelectionChangedHandler(string arg)
+        {
+            if (arg == null) return;
+
+            imageListView.SetSelectedClass(arg.Substring(arg.IndexOf(' ') + 1));
+            imageListView.RaiseCollectionChanged();
+        }
+
         public void ExectueHandler()
         {
             if (processing)
@@ -82,8 +102,6 @@ namespace RecognizerVM
                 return;
             }
 
-            classDict.Clear();
-            uiContext = SynchronizationContext.Current;
             _ = DetectObjectsAsync();
         }
 
@@ -94,12 +112,12 @@ namespace RecognizerVM
 
             var t = Detector.ExecuteAsync(inputPath, tokenSource.Token, output);
 
-            await DetectionProcessingAsync(output, classDict);
+            await DetectionProcessingAsync(output);
 
             processing = false;
         }
 
-        async Task DetectionProcessingAsync(ISourceBlock<IReadOnlyList<YoloResult>> source, YoloDictionary dict)
+        async Task DetectionProcessingAsync(ISourceBlock<IReadOnlyList<YoloResult>> source)
         {
             int imageAmount = Detector.GetImageFilenames(inputPath).Length;
             int i = 0;
@@ -112,7 +130,7 @@ namespace RecognizerVM
 
                 foreach (var item in data)
                 {
-                    uiContext.Send(x => dict.Add(new YoloImageResult(item)), null);
+                    await dbManager.AddAsync(new YoloItem(item));
                 }
 
                 Progress = (float)i / imageAmount;

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using RecognizerVM;
 
 namespace RecognizerUI
@@ -26,6 +27,16 @@ namespace RecognizerUI
         public void OnClickStop(object sender, RoutedEventArgs e)
         {
             viewModel.StopHandler();
+        }
+
+        public void OnClickClear(object sender, RoutedEventArgs e)
+        {
+            viewModel.ClearHandler();
+        }
+
+        public void OnSelectionChanged(object sender, RoutedEventArgs e)
+        {
+            viewModel.SelectionChangedHandler(((ListBox)sender).SelectedItem as string);
         }
     }
 
