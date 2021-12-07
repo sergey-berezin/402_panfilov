@@ -2,10 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Contract;
 
 namespace DataBase
 {
-    public class DataBaseManager
+    public interface ILibraryDB
+    {
+        public bool Add(Item item);
+        public Task AddAsync(Item item);
+        public void Clear();
+        public IEnumerable<string> GetClassList();
+        public IEnumerable<byte[]> GetImageList(string label);
+    }
+
+    public class DataBaseManager : ILibraryDB
     {
         private LibraryContext db = new();
 
@@ -41,7 +51,7 @@ namespace DataBase
             DataChanged?.Invoke();
         }
 
-        bool CheckItemPresence(Item item)
+        private bool CheckItemPresence(Item item)
         {
             bool result = false;
             var query = db.Items.Where(x => (x.X1 == item.X1) && (x.X2 == item.X2) && (x.Y1 == item.Y1) && (x.Y2 == item.Y2));

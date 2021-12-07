@@ -27,7 +27,7 @@
             <TextBlock Margin="10,0,10,0" FontWeight="Bold" Text="Input Directory:"/>
             <TextBlock Margin="10,0,10,10" TextWrapping="Wrap" Text="{Binding Path=InputPath}"/>
             <TextBlock Margin="10,0,10,0" FontWeight="Bold" Text="Progress:"/>
-            <TextBlock Margin="10,0,10,10" Text="{Binding Path=ProgressPercentsAmount}"/>
+            <TextBlock Margin="10,0,10,10" Text="{Binding Path=Progress}"/>
         </StackPanel>
 
         <Rectangle Grid.Column="1" Fill="Black" />

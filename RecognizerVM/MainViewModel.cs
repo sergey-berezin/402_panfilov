@@ -1,10 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
+﻿using System;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using YOLO;
-using DataBase;
 
 namespace RecognizerVM
 {
@@ -17,20 +12,18 @@ namespace RecognizerVM
 
     public class MainViewModel : ViewModelBase
     {
+        public const string ServerUrl = "http://localhost:5000/";
+
+        ClientSession clientSession = new();
         string inputPath = "";
-        bool processing;
-        float progress;
-        CancellationTokenSource tokenSource = new();
-        DataBaseManager dbManager = new();
-        BufferBlock<IReadOnlyList<YoloResult>> output = new();
+        string progress;
         IUIServices svc;
         ClassListView classListView;
         ImageListView imageListView;
 
         public ClassListView ClassListView => classListView;
         public ImageListView ImageListView => imageListView;
-        public DataBaseManager DBManager => dbManager;
-        public string ProgressPercentsAmount => $"{(Progress * 100f):F1}%";
+        public ClientSession ClientSession => clientSession;
         public string InputPath
         {
             get => inputPath;
@@ -40,14 +33,13 @@ namespace RecognizerVM
                 RaisePropertyChanged();
             }
         }
-        public float Progress
+        public string Progress
         {
             get => progress;
             set
             {
                 progress = value;
                 RaisePropertyChanged();
-                RaisePropertyChanged(nameof(ProgressPercentsAmount));
             }
         }
 
@@ -57,6 +49,8 @@ namespace RecognizerVM
             svc = _svc;
             classListView = new(this);
             imageListView = new(this);
+
+            _ = RefreshContentFromServerAsync();
         }
 
 
@@ -70,29 +64,37 @@ namespace RecognizerVM
             }
         }
 
-        public void StopHandler()
+        public async Task StopHandler()
         {
-            tokenSource.Cancel();
+            if (!await CheckServer()) return;
+
+            await clientSession.PostStringAsync($"{ServerUrl}api/content/stop_recognition", "");
         }
 
-        public void ClearHandler()
+        public async Task ClearHandler()
         {
-            dbManager.Clear();
+            if (!await CheckServer()) return;
+
+            await clientSession.DeleteAsync($"{ServerUrl}api/content/clear_database");
+
+            await RefreshContentFromServerAsync();
         }
 
-        public void SelectionChangedHandler(string arg)
+        public async Task SelectionChangedHandler(string arg)
         {
+            if (!await CheckServer()) return;
             if (arg == null) return;
 
-            imageListView.SetSelectedClass(arg.Substring(arg.IndexOf(' ') + 1));
-            imageListView.RaiseCollectionChanged();
+            await imageListView.SetCollection(arg.Substring(arg.IndexOf(' ') + 1));
         }
 
-        public void ExectueHandler()
+        public async Task ExectueHandler()
         {
-            if (processing)
+            if (!await CheckServer()) return;
+
+            if ((await clientSession.GetStringAsync($"{ServerUrl}api/content/processing")) == "true")
             {
-                svc.ConfirmError("Обработка уже началась", "");
+                svc.ConfirmError("Предыдущая обработка еще не завершена", "Ошибка");
                 return;
             }
 
@@ -102,40 +104,46 @@ namespace RecognizerVM
                 return;
             }
 
-            _ = DetectObjectsAsync();
-        }
+            await clientSession.PostStringAsync($"{ServerUrl}api/content/start_detection", inputPath);
 
-
-        async Task DetectObjectsAsync()
-        {
-            processing = true;
-
-            var t = Detector.ExecuteAsync(inputPath, tokenSource.Token, output);
-
-            await DetectionProcessingAsync(output);
-
-            processing = false;
-        }
-
-        async Task DetectionProcessingAsync(ISourceBlock<IReadOnlyList<YoloResult>> source)
-        {
-            int imageAmount = Detector.GetImageFilenames(inputPath).Length;
-            int i = 0;
-
-            Progress = 0f;
-            while (await source.OutputAvailableAsync())
+            while (true)
             {
-                var data = source.Receive();
-                i++;
+                Progress = await clientSession.GetStringAsync($"{ServerUrl}api/content/progress");
+                await Task.Delay(250);
 
-                foreach (var item in data)
-                {
-                    await dbManager.AddAsync(new YoloItem(item));
-                }
+                if ((await clientSession.GetStringAsync($"{ServerUrl}api/content/processing")) == "false")
+                    break;
+            }
 
-                Progress = (float)i / imageAmount;
+            await RefreshContentFromServerAsync();
+        }
 
-                //svc.ConfirmError($"i = {i}.  i / imageAmount = {(i / imageAmount):F1}. Progress = {Progress}", "Debug");
+
+        public async Task RefreshContentFromServerAsync()
+        {
+            if (!await CheckServer()) return;
+
+            Progress = await clientSession.GetStringAsync($"{ServerUrl}api/content/progress");
+            await classListView.SetCollection();
+            await imageListView.SetCollection();
+        }
+
+        void CallServerErrorNotification(string errorText)
+        {
+            svc.ConfirmError(errorText, "Server error");
+        }
+
+        async Task<bool> CheckServer()
+        {
+            try
+            {
+                await clientSession.GetStringAsync($"{ServerUrl}api/content/processing");
+                return true;
+            }
+            catch (Exception e)
+            {
+                CallServerErrorNotification(e.Message);
+                return false;
             }
         }
     }
