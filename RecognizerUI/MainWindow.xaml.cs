@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using RecognizerVM;
 
@@ -19,24 +20,24 @@ namespace RecognizerUI
             viewModel.ChooseDirectoryHandler();
         }
 
-        public void OnClickExecute(object sender, RoutedEventArgs e)
+        public async void OnClickExecute(object sender, RoutedEventArgs e)
         {
-            viewModel.ExectueHandler();
+            await viewModel.ExectueHandler();
         }
 
-        public void OnClickStop(object sender, RoutedEventArgs e)
+        public async void OnClickStop(object sender, RoutedEventArgs e)
         {
-            viewModel.StopHandler();
+            await viewModel.StopHandler();
         }
 
-        public void OnClickClear(object sender, RoutedEventArgs e)
+        public async void OnClickClear(object sender, RoutedEventArgs e)
         {
-            viewModel.ClearHandler();
+            await viewModel.ClearHandler();
         }
 
-        public void OnSelectionChanged(object sender, RoutedEventArgs e)
+        public async void OnSelectionChanged(object sender, RoutedEventArgs e)
         {
-            viewModel.SelectionChangedHandler(((ListBox)sender).SelectedItem as string);
+            await viewModel.SelectionChangedHandler(((ListBox)sender).SelectedItem as string);
         }
     }
 

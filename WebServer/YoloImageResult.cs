@@ -3,9 +3,9 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using YOLO;
-using DataBase;
+using Contract;
 
-namespace RecognizerVM
+namespace WebServer
 {
     public class YoloImageResult : YoloResult
     {
@@ -48,7 +48,6 @@ namespace RecognizerVM
             return byteImage;
         }
     }
-
 
     public class YoloItem : Item
     {

@@ -21,6 +21,8 @@ namespace YOLO
         {
             MLContext mlContext = new MLContext();
 
+            Console.WriteLine("Detector.ExecuteAsync 01");
+
             var pipeline = mlContext.Transforms.ResizeImages(inputColumnName: "bitmap", outputColumnName: "input_1:0", imageWidth: 416, imageHeight: 416, resizing: ResizingKind.IsoPad)
                 .Append(mlContext.Transforms.ExtractPixels(outputColumnName: "input_1:0", scaleImage: 1f / 255f, interleavePixelColors: true))
                 .Append(mlContext.Transforms.ApplyOnnxModel(

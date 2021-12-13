@@ -3,20 +3,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
 namespace RecognizerVM
 {
     public abstract class DataBaseView : IEnumerable, INotifyCollectionChanged
     {
+        public MainViewModel VM { get; }
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
+
+
         public DataBaseView(MainViewModel vm)
         {
             VM = vm;
-            VM.DBManager.DataChanged += RaiseCollectionChanged;
         }
-
-        public MainViewModel VM { get; }
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
 
 
         public void RaiseCollectionChanged()
@@ -49,29 +50,47 @@ namespace RecognizerVM
 
     public class ClassListView : DataBaseView
     {
+        List<string> classList = new();
+
         public ClassListView(MainViewModel vm) : base(vm) { }
+
+        public async Task SetCollection()
+        {
+            classList = await VM.ClientSession.GetClassListAsync($"{MainViewModel.ServerUrl}api/content/class_list");
+            RaiseCollectionChanged();
+        }
 
         public override IEnumerator<string> GetEnumerator()
         {
-            return VM.DBManager.GetClassList().GetEnumerator();
+            return classList.GetEnumerator();
         }
     }
 
 
     public class ImageListView : DataBaseView
     {
+        List<BitmapImage> imageList = new();
+        string selectedClass = "";
+
         public ImageListView(MainViewModel vm) : base(vm) { }
 
-        private string selectedClass;
 
-        public void SetSelectedClass(string c)
+        public async Task SetCollection()
         {
-            selectedClass = c;
+            if (selectedClass == "") return;
+            await SetCollection(selectedClass);
+        }
+
+        public async Task SetCollection(string _selectedClass)
+        {
+            selectedClass = _selectedClass;
+            imageList = (await VM.ClientSession.GetImageByteListAsync($"{MainViewModel.ServerUrl}api/content/image_byte_list/{selectedClass}")).Select(x => GetBitmapImageFromByte(x)).ToList();
+            RaiseCollectionChanged();
         }
 
         public override IEnumerator<BitmapImage> GetEnumerator()
         {
-            return VM.DBManager.GetImageList(selectedClass).Select(x => GetBitmapImageFromByte(x)).GetEnumerator();
+            return imageList.GetEnumerator();
         }
     }
 }
